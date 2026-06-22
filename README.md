@@ -15,3 +15,5 @@ Technology Stack
 - **Framework**: Next.js (App Router)
 *Library**: React 19
 - **Style System**: Tailwind CSS v4 (using `@tailwindcss/postcss`)
+**API Client**: Axios & React Hooks
+- **Language**: TypeScript
