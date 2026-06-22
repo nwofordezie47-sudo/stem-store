@@ -17,3 +17,10 @@ Technology Stack
 - **Style System**: Tailwind CSS v4 (using `@tailwindcss/postcss`)
 **API Client**: Axios & React Hooks
 - **Language**: TypeScript
+
+### Backend API
+- **Framework**: Express & Node.js
+- **Database**: MongoDB & Mongoose (Object Data Modeling)
+- **Asset Storage**: Cloudinary (via Multer file handling)
+- **Validation & Security**: Zod, Helmet, Cookie-Parser, and Express Rate Limit
+- **Language**: TypeScript
