@@ -13,3 +13,5 @@ This repository houses both the consumer-facing frontend and the robust server-s
 Technology Stack
 ### Frontend Client
 - **Framework**: Next.js (App Router)
+*Library**: React 19
+- **Style System**: Tailwind CSS v4 (using `@tailwindcss/postcss`)
