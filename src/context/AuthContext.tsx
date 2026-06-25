@@ -3,12 +3,12 @@
 import {
   createContext,
   useState,
-  useEffect,
+  useEffect,                                                                                      
   ReactNode,
 } from "react";
 
 import { User } from "@/types/User";
-import { getMe } from "@/services/authAPI";
+import { getMe } from "@/services/authAPI";                                                                                                      
 
 type AuthContextType = {
   user: User | null;

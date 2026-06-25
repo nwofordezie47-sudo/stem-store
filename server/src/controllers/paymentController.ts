@@ -32,6 +32,23 @@ export const initializePayment = async (req: Request, res: Response): Promise<vo
   // Unique, traceable reference: readable prefix + IDs + timestamp
   const reference = `STEM_${stemId}_${user._id}_${Date.now()}`;
 
+  // Sandbox bypass for testing checkout flow locally
+  if (process.env.PAYSTACK_SECRET_KEY === 'sk_test_dummy') {
+    await Purchase.create({
+      user: user._id,
+      stem: stem._id,
+      amount: stem.price,
+      paystackRef: reference,
+      status: 'pending',
+    });
+
+    res.json({
+      authorization_url: `${process.env.CLIENT_URL || 'http://localhost:3001'}/mock-checkout?reference=${reference}&amount=${stem.price}&title=${encodeURIComponent(stem.title)}`,
+      reference,
+    });
+    return;
+  }
+
   // Create a pending Purchase now so we have a DB record before the user leaves
   await Purchase.create({
     user: user._id,
@@ -42,10 +59,13 @@ export const initializePayment = async (req: Request, res: Response): Promise<vo
   });
 
   // Call Paystack — amount must be in kobo
+  const callback_url = `${req.protocol}://${req.get('host')}/api/payments/callback`;
+
   const { data } = await paystackAPI.post('/transaction/initialize', {
     email: user.email,
     amount: stem.price, // kobo
     reference,
+    callback_url,
     metadata: {
       stemId: String(stem._id),
       userId: String(user._id),
@@ -63,6 +83,16 @@ export const initializePayment = async (req: Request, res: Response): Promise<vo
 
 export const verifyPayment = async (req: Request, res: Response): Promise<void> => {
   const { reference } = req.params;
+
+  if (process.env.PAYSTACK_SECRET_KEY === 'sk_test_dummy') {
+    await Purchase.findOneAndUpdate(
+      { paystackRef: reference },
+      { status: 'success' },
+      { new: true }
+    );
+    res.json({ status: 'success', message: 'Payment verified (mock)' });
+    return;
+  }
 
   const { data } = await paystackAPI.get(`/transaction/verify/${reference}`);
   const transaction = data.data;
@@ -135,4 +165,36 @@ export const handleWebhook = async (req: Request, res: Response): Promise<void> 
 
   // Always respond 200 — Paystack retries on non-2xx responses
   res.sendStatus(200);
+};
+
+export const handleCallback = async (req: Request, res: Response): Promise<void> => {
+  const reference = req.query.reference as string | undefined;
+
+  if (!reference) {
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/my-purchases?error=no_reference`);
+    return;
+  }
+
+  try {
+    const { data } = await paystackAPI.get(`/transaction/verify/${reference}`);
+    const transaction = data.data;
+
+    if (transaction.status === 'success') {
+      await Purchase.findOneAndUpdate(
+        { paystackRef: reference },
+        { status: 'success' },
+        { new: true }
+      );
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/my-purchases?success=true`);
+    } else {
+      await Purchase.findOneAndUpdate(
+        { paystackRef: reference },
+        { status: 'failed' }
+      );
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/my-purchases?error=payment_failed`);
+    }
+  } catch (error) {
+    console.error('Error verifying callback:', error);
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/my-purchases?error=verification_failed`);
+  }
 };

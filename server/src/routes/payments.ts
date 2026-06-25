@@ -3,6 +3,7 @@ import {
   initializePayment,
   verifyPayment,
   handleWebhook,
+  handleCallback,
 } from '../controllers/paymentController';
 import asyncHandler from '../middleware/asyncHandler';
 import protect from '../middleware/auth';
@@ -18,5 +19,6 @@ router.post('/webhook', asyncHandler(handleWebhook));
 // User-facing payment routes
 router.post('/initialize', protect, csrfCheck, asyncHandler(initializePayment));
 router.get('/verify/:reference', protect, asyncHandler(verifyPayment));
+router.get('/callback', asyncHandler(handleCallback));
 
 export default router;
