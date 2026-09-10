@@ -10,16 +10,18 @@ import { Request, Response, NextFunction } from 'express';
  * legitimate cross-origin requests from Paystack's servers, and is already
  * protected by HMAC-SHA512 signature verification.
  */
+const normalizeUrl = (url?: string) => url?.trim().replace(/\/+$/, '');
+
 const csrfCheck = (
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin?.trim().replace(/\/+$/, '');
   const allowed = [
-    process.env.CLIENT_URL,
-    process.env.ADMIN_URL,
-  ].filter(Boolean);
+    normalizeUrl(process.env.CLIENT_URL),
+    normalizeUrl(process.env.ADMIN_URL),
+  ].filter((o): o is string => Boolean(o));
 
   if (!origin || !allowed.includes(origin)) {
     res.status(403).json({ error: 'Forbidden: invalid origin' });

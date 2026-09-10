@@ -1,4 +1,15 @@
 node_modules/
 dist/
-.env
 *.js.map
+*.tsbuildinfo
+
+# Environment variables
+.env*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / Editor files
+.DS_Store

@@ -16,15 +16,18 @@ import adminRoutes from './routes/admin';
 
 const app = express();
 
+// ─── Reverse Proxy Trust (Required for Render & rate-limiting) ─────────────
+app.set('trust proxy', 1);
+
 // ─── Security headers ────────────────────────────────────────────────────────
 app.use(helmet());
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
-// No wildcard — browsers reject wildcard origin when credentials:true is set.
-// Add ADMIN_URL to the allowlist when the admin app is added.
+// Strip any accidental trailing slashes from allowed origins
+const normalizeUrl = (url?: string) => url?.trim().replace(/\/+$/, '');
 const allowedOrigins = [
-  process.env.CLIENT_URL,
-  process.env.ADMIN_URL,
+  normalizeUrl(process.env.CLIENT_URL),
+  normalizeUrl(process.env.ADMIN_URL),
 ].filter((o): o is string => Boolean(o));
 
 app.use(
@@ -32,7 +35,8 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. Postman, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" not allowed`));
     },
     credentials: true,
