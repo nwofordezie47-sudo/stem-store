@@ -43,8 +43,20 @@ export default function StemDetails({
     try {
       const data = await initializePayment(id);
       window.location.href = data.authorization_url;
-    } catch {
-      setError("Payment initialization failed. Please try again.");
+    } catch (err: any) {
+      console.error("Payment initialization error:", err);
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        (err?.response?.status === 403
+          ? "Cross-Origin/CSRF error: Your frontend URL is not authorized in backend CLIENT_URL."
+          : null) ||
+        (err?.response?.status === 401
+          ? "Authentication error: Session expired or auth cookie not sent. Please log in again."
+          : null) ||
+        err?.message ||
+        "Payment initialization failed. Please try again.";
+      setError(message);
       setBuying(false);
     }
   };

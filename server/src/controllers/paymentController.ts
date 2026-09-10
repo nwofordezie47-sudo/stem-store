@@ -6,10 +6,15 @@ import Stem from '../models/Stem';
 
 const paystackAPI = axios.create({
   baseURL: 'https://api.paystack.co',
-  headers: {
-    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-    'Content-Type': 'application/json',
-  },
+});
+
+paystackAPI.interceptors.request.use((config) => {
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim();
+  if (key) {
+    config.headers.Authorization = `Bearer ${key}`;
+  }
+  config.headers['Content-Type'] = 'application/json';
+  return config;
 });
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
@@ -43,9 +48,15 @@ export const initializePayment = async (req: Request, res: Response): Promise<vo
     });
 
     res.json({
-      authorization_url: `${process.env.CLIENT_URL || 'http://localhost:3001'}/mock-checkout?reference=${reference}&amount=${stem.price}&title=${encodeURIComponent(stem.title)}`,
+      authorization_url: `${(process.env.CLIENT_URL || 'http://localhost:3001').replace(/\/+$/, '')}/mock-checkout?reference=${reference}&amount=${stem.price}&title=${encodeURIComponent(stem.title)}`,
       reference,
     });
+    return;
+  }
+
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim();
+  if (!key) {
+    res.status(500).json({ error: 'PAYSTACK_SECRET_KEY is not configured in server environment variables.' });
     return;
   }
 
@@ -61,22 +72,34 @@ export const initializePayment = async (req: Request, res: Response): Promise<vo
   // Call Paystack — amount must be in kobo
   const callback_url = `${req.protocol}://${req.get('host')}/api/payments/callback`;
 
-  const { data } = await paystackAPI.post('/transaction/initialize', {
-    email: user.email,
-    amount: stem.price, // kobo
-    reference,
-    callback_url,
-    metadata: {
-      stemId: String(stem._id),
-      userId: String(user._id),
-      stemTitle: stem.title,
-    },
-  });
+  try {
+    const { data } = await paystackAPI.post('/transaction/initialize', {
+      email: user.email,
+      amount: stem.price, // kobo
+      reference,
+      callback_url,
+      metadata: {
+        stemId: String(stem._id),
+        userId: String(user._id),
+        stemTitle: stem.title,
+      },
+    });
 
-  res.json({
-    authorization_url: data.data.authorization_url,
-    reference: data.data.reference,
-  });
+    res.json({
+      authorization_url: data.data.authorization_url,
+      reference: data.data.reference,
+    });
+  } catch (paystackErr: any) {
+    const detail =
+      paystackErr.response?.data?.message ||
+      paystackErr.response?.data?.error ||
+      paystackErr.message ||
+      'Paystack transaction initialization failed';
+    console.error('Paystack initialization error:', detail, paystackErr.response?.data);
+    res.status(paystackErr.response?.status || 500).json({
+      error: `Paystack: ${detail}`,
+    });
+  }
 };
 
 // ─── Verify (UI feedback) ────────────────────────────────────────────────────
@@ -94,24 +117,31 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const { data } = await paystackAPI.get(`/transaction/verify/${reference}`);
-  const transaction = data.data;
+  try {
+    const { data } = await paystackAPI.get(`/transaction/verify/${reference}`);
+    const transaction = data.data;
 
-  if (transaction.status === 'success') {
-    // Upsert is safe because Purchase.paystackRef is unique — a duplicate
-    // from the webhook firing at the same time will be silently rejected.
-    await Purchase.findOneAndUpdate(
-      { paystackRef: reference },
-      { status: 'success' },
-      { new: true }
-    );
-    res.json({ status: 'success', message: 'Payment verified' });
-  } else {
-    await Purchase.findOneAndUpdate(
-      { paystackRef: reference },
-      { status: 'failed' }
-    );
-    res.status(402).json({ status: transaction.status, message: 'Payment not successful' });
+    if (transaction.status === 'success') {
+      await Purchase.findOneAndUpdate(
+        { paystackRef: reference },
+        { status: 'success' },
+        { new: true }
+      );
+      res.json({ status: 'success', message: 'Payment verified' });
+    } else {
+      await Purchase.findOneAndUpdate(
+        { paystackRef: reference },
+        { status: 'failed' }
+      );
+      res.status(402).json({ status: transaction.status, message: 'Payment not successful' });
+    }
+  } catch (verifyErr: any) {
+    const detail =
+      verifyErr.response?.data?.message ||
+      verifyErr.response?.data?.error ||
+      verifyErr.message ||
+      'Paystack verification failed';
+    res.status(verifyErr.response?.status || 500).json({ error: `Paystack: ${detail}` });
   }
 };
 
