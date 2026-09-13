@@ -28,10 +28,10 @@ export default function ProfilePage() {
     <div className="min-h-screen relative z-10 transition-colors duration-300">
       <Sidebar />
 
-      <main className="pl-76 pr-8 pt-28 pb-12">
+      <main className="px-4 pt-24 pb-16 sm:px-6 sm:pt-28 lg:pl-76 lg:pr-8">
         <div className="space-y-8">
           {/* Header Card */}
-          <div className="bg-white/40 dark:bg-zinc-950/20 border border-zinc-200/50 dark:border-white/5 p-8 rounded-3xl backdrop-blur-xl shadow-lg">
+          <div className="bg-white/40 dark:bg-zinc-950/20 border border-zinc-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl backdrop-blur-xl shadow-lg">
             <h1 className="text-3xl md:text-4xl font-normal text-zinc-900 dark:text-white heading-font leading-none">
               My Profile
             </h1>

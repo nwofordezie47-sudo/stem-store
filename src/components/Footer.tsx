@@ -75,7 +75,7 @@ export default function Footer() {
 
         <hr className="my-8 border-zinc-200/40 dark:border-zinc-800/20 sm:mx-auto lg:my-8" />
 
-        <div className="sm:flex sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <span className="text-sm text-zinc-500 dark:text-zinc-500 font-bold">
             © {new Date().getFullYear()}{" "}
             <Link href="/" className="hover:underline">
@@ -84,7 +84,7 @@ export default function Footer() {
             . All Rights Reserved.
           </span>
           
-          <div className="flex mt-4 sm:justify-center sm:mt-0 gap-5 text-zinc-550 dark:text-zinc-450">
+          <div className="flex sm:justify-center gap-5 text-zinc-550 dark:text-zinc-450">
             {/* Facebook */}
             <a href="#" className="hover:text-green-500 transition duration-200" aria-label="Facebook">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

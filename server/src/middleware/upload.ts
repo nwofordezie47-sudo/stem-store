@@ -8,6 +8,8 @@ import cloudinary from '../config/cloudinary';
 interface CloudinaryFile extends Express.Multer.File {
   cloudinary?: UploadApiResponse;
   resourceType?: string;
+  path: string;      // Cloudinary secure URL
+  filename: string;
 }
 
 type DoneCallback = (error: Error | null, file?: Partial<CloudinaryFile>) => void;

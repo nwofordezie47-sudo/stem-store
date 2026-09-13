@@ -43,18 +43,19 @@ export default function StemDetails({
     try {
       const data = await initializePayment(id);
       window.location.href = data.authorization_url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Payment initialization error:", err);
+      const axiosErr = err as { response?: { status?: number; data?: { error?: string; message?: string } }; message?: string };
       const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        (err?.response?.status === 403
+        axiosErr?.response?.data?.error ||
+        axiosErr?.response?.data?.message ||
+        (axiosErr?.response?.status === 403
           ? "Cross-Origin/CSRF error: Your frontend URL is not authorized in backend CLIENT_URL."
           : null) ||
-        (err?.response?.status === 401
+        (axiosErr?.response?.status === 401
           ? "Authentication error: Session expired or auth cookie not sent. Please log in again."
           : null) ||
-        err?.message ||
+        axiosErr?.message ||
         "Payment initialization failed. Please try again.";
       setError(message);
       setBuying(false);
@@ -91,11 +92,11 @@ export default function StemDetails({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12 mt-28 min-h-[85vh] relative z-10">
-      <div className="grid md:grid-cols-12 gap-8 items-start">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 mt-24 sm:mt-28 min-h-[85vh] relative z-10">
+      <div className="grid md:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Album Artwork Cover */}
         <div className="md:col-span-5 flex flex-col items-center">
-          <div className="liquid-glass group relative overflow-hidden rounded-[2rem] aspect-square w-full max-w-sm border border-zinc-200/50 dark:border-white/5 bg-zinc-100/50 dark:bg-zinc-950/20 shadow-2xl transition duration-500 hover:scale-[1.02]">
+          <div className="liquid-glass group relative overflow-hidden rounded-[2rem] aspect-square w-full max-w-xs sm:max-w-sm border border-zinc-200/50 dark:border-white/5 bg-zinc-100/50 dark:bg-zinc-950/20 shadow-2xl transition duration-500 hover:scale-[1.02]">
             <img
               src={stem.thumbnailUrl}
               alt={stem.title}
@@ -106,15 +107,15 @@ export default function StemDetails({
 
         {/* Details section */}
         <div className="md:col-span-7 flex flex-col gap-6">
-          <div className="liquid-glass p-8 md:p-10 flex flex-col gap-5">
+          <div className="liquid-glass p-6 sm:p-8 md:p-10 flex flex-col gap-5">
             <div>
               <span className="text-xs font-bold uppercase tracking-[0.3em] text-green-600 dark:text-green-400">
                 {stem.category}
               </span>
-              <h1 className="text-4xl md:text-5xl font-normal text-zinc-900 dark:text-white heading-font mt-2 leading-none">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-normal text-zinc-900 dark:text-white heading-font mt-2 leading-tight sm:leading-none">
                 {stem.title}
               </h1>
-              <p className="text-zinc-500 dark:text-zinc-400 mt-2 font-bold text-lg">
+              <p className="text-zinc-500 dark:text-zinc-400 mt-2 font-bold text-base sm:text-lg">
                 Producer: <span className="text-zinc-700 dark:text-zinc-300 font-semibold">{stem.producer}</span>
               </p>
             </div>
@@ -124,7 +125,7 @@ export default function StemDetails({
                 {stem.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-xl bg-green-500/5 border border-green-500/10 text-green-600 dark:text-green-400 px-3.5 py-1 text-xs font-bold uppercase tracking-widest"
+                    className="rounded-xl bg-green-500/5 border border-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 text-xs font-bold uppercase tracking-widest"
                   >
                     {tag}
                   </span>
@@ -134,7 +135,7 @@ export default function StemDetails({
 
             <div className="border-t border-zinc-200/50 dark:border-zinc-800/40 my-2" />
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-500 font-bold">Price</p>
                 <h2 className="text-3xl md:text-4xl font-normal text-zinc-900 dark:text-white heading-font mt-1">
@@ -145,7 +146,7 @@ export default function StemDetails({
               <button
                 onClick={handleBuyInitiate}
                 disabled={buying}
-                className="bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-black font-bold px-8 py-4 rounded-2xl transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/15 text-md cursor-pointer"
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-black font-bold px-8 py-4 rounded-2xl transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/15 text-center text-md cursor-pointer"
               >
                 {buying ? "Redirecting..." : "Buy With Paystack"}
               </button>
@@ -153,7 +154,7 @@ export default function StemDetails({
           </div>
 
           {/* Custom audio player box */}
-          <div className="liquid-glass p-8">
+          <div className="liquid-glass p-5 sm:p-8">
             <h3 className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-500 font-bold mb-1">
               Preview Audition
             </h3>
